@@ -60,7 +60,7 @@ fun parseSpec(file: File): Spec {
         when (val node = cursor) {
             is Heading -> {
                 // 新しい見出しが来たら前のケースを確定する
-                if (steps.isNotEmpty() || expected.isNotEmpty()) flushCase()
+                flushCase()
                 when (node.level) {
                     1 -> {
                         title = node.text.toString()

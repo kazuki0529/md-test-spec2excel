@@ -47,8 +47,9 @@ class SpecLoaderTest {
     @Test
     fun `手順が連番に正規化される`() {
         val steps = spec.cases[0].steps
-        assertTrue(steps.startsWith("1. "), "steps should start with '1. ' but was: $steps")
-        assertTrue(steps.contains("2. "), "steps should contain '2. ' but was: $steps")
+        val lines = steps.split("\n")
+        assertTrue(lines[0].startsWith("1. "), "first step should start with '1. ' but was: ${lines[0]}")
+        assertTrue(lines[1].startsWith("2. "), "second step should start with '2. ' but was: ${lines[1]}")
     }
 
     @Test
