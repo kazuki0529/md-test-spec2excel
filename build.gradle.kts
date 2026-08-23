@@ -4,7 +4,7 @@ plugins {
     application
 }
 
-group = "com.example"
+group = "io.github.kazuki0529"
 version = "1.0.0"
 
 repositories {
@@ -27,7 +27,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 }
 
 application {
-    mainClass.set("com.example.md2excel.MainKt")
+    mainClass.set("io.github.kazuki0529.mdspec2excel.MainKt")
 }
 
 tasks.shadowJar {
@@ -35,7 +35,7 @@ tasks.shadowJar {
     archiveClassifier.set("")
     archiveVersion.set(version.toString())
     manifest {
-        attributes["Main-Class"] = "com.example.md2excel.MainKt"
+        attributes["Main-Class"] = "io.github.kazuki0529.mdspec2excel.MainKt"
     }
 }
 

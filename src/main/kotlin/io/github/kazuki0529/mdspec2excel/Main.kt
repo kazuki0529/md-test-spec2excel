@@ -1,4 +1,4 @@
-package com.example.md2excel
+package io.github.kazuki0529.mdspec2excel
 
 import com.vladsch.flexmark.ast.BulletList
 import com.vladsch.flexmark.ast.FencedCodeBlock
