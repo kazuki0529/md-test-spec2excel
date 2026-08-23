@@ -11,7 +11,11 @@ import java.io.FileOutputStream
 import java.nio.file.Paths
 
 /**
- * 指定ディレクトリの Markdown ファイルを読み込み、Excel テンプレートに出力する
+ * 指定ディレクトリ内の Markdown ファイルをすべて読み込み、JXls 形式の Excel テンプレートへ出力する。
+ *
+ * ディレクトリ内の `.md` ファイルを列挙し、[SpecLoader.parse] でパースした結果を
+ * JXls の [Context] に登録したうえでテンプレートを処理する。
+ * 各ファイルの変数名にはファイル名（拡張子なし）が使用される。
  *
  * @param mdSpecDir Markdown ファイルが格納されたディレクトリのパス
  * @param template JXls 形式の Excel テンプレートファイルのパス
