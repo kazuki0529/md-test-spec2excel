@@ -1,0 +1,46 @@
+# テンプレートのカスタマイズ
+
+本ツールは [JXls](https://jxls.sourceforge.net/) を使用して Excel への出力を行います。  
+`template/template.xlsx` を編集することで、出力する Excel のレイアウトや書式を自由にカスタマイズできます。
+
+## テンプレート内で使用できる変数
+
+Markdown ファイルのファイル名（拡張子なし）が変数名になります。  
+例えば `mdSpec.md` というファイルを変換した場合、テンプレート内では `${mdSpec.title}` のように参照できます。
+
+| 変数 | 型 | 説明 |
+|---|---|---|
+| `${fileName.title}` | `String` | Markdown の `# 見出し1` から取得したタイトル |
+| `${fileName.cases}` | `List<SpecCase>` | テストケースの一覧 |
+| `${case.mainItem}` | `String` | 大項目（`## 見出し2`） |
+| `${case.middleItem}` | `String` | 中項目（`### 見出し3`） |
+| `${case.smallItem}` | `String` | 小項目（`#### 見出し4`） |
+| `${case.steps}` | `String` | 確認手順（改行区切り） |
+| `${case.expected}` | `String` | 想定動作（改行区切り） |
+| `${case.notes}` | `String` | 備考（改行区切り） |
+
+> `fileName` の部分は実際の Markdown ファイル名（拡張子なし）に置き換えてください。
+
+## テンプレートの書き方
+
+テンプレート Excel は JXls 形式で記述します。  
+セルに式を記入し、セルコメントで JXls の制御命令を付与します。
+
+テンプレートのイメージ（1行 = 1テストケース）:
+
+```
+| タイトル | jx:each(items="mdSpec.cases" var="case" lastCell="G2") |
+|----------|---------|---------|---------|--------|---------|------|
+| No  | 大項目            | 中項目             | 小項目            | 確認手順         | 想定動作          | 備考          |
+|     | ${case.mainItem}  | ${case.middleItem} | ${case.smallItem} | ${case.steps}    | ${case.expected}  | ${case.notes} |
+```
+
+- **`jx:each`** でテストケースの数だけ行を繰り返します
+- **`var="case"`** でループ変数名を指定します
+- **`${case.mainItem}`** 等の式がセルの値として展開されます
+- ファイル名（`mdSpec`）の部分は Markdown ファイル名（拡張子なし）に合わせてください
+
+## 参考
+
+- [JXls 公式ドキュメント](https://jxls.sourceforge.net/)
+- リポジトリ同梱のサンプルテンプレート: `template/template.xlsx`
