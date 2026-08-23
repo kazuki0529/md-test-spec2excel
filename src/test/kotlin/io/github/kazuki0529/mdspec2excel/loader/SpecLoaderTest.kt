@@ -130,8 +130,16 @@ class SpecLoaderTest {
             """.trimIndent()
             val parsed = parseMarkdown(tempDir, markdown)
 
-            assertEquals(listOf("1. 手順1", "2. 手順3"), parsed.cases[0].steps.split("\n"))
-            assertEquals(listOf("・想定A", "・想定B", "・想定C"), parsed.cases[0].expected.split("\n"))
+            assertEquals(
+                listOf("1. 手順1", "2. 手順3"),
+                parsed.cases[0].steps.split("\n"),
+                "actual steps=${parsed.cases[0].steps}"
+            )
+            assertEquals(
+                listOf("・想定A", "・想定B", "・想定C"),
+                parsed.cases[0].expected.split("\n"),
+                "actual expected=${parsed.cases[0].expected}"
+            )
         }
     }
 

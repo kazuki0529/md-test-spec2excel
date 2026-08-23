@@ -46,11 +46,11 @@ private fun ParseState.withHeading(level: Int, text: String): ParseState = when 
     else -> this
 }
 
-private fun ParseState.withSteps(list: OrderedList): ParseState = copy(steps = list.chars.toString().toNormalizedSteps())
+private fun ParseState.withSteps(list: OrderedList): ParseState = copy(steps = steps + list.chars.toString().toNormalizedSteps(steps.size))
 
-private fun ParseState.withExpected(list: BulletList): ParseState = copy(expected = list.chars.toString().toExpectedLines())
+private fun ParseState.withExpected(list: BulletList): ParseState = copy(expected = expected + list.chars.toString().toExpectedLines())
 
-private fun ParseState.withNotes(codeBlock: FencedCodeBlock): ParseState = copy(notes = codeBlock.chars.toString().toNoteLines())
+private fun ParseState.withNotes(codeBlock: FencedCodeBlock): ParseState = copy(notes = notes + codeBlock.chars.toString().toNoteLines())
 
 private fun String.toTrimmedNonBlankLines(): List<String> = trim()
     .lineSequence()
@@ -58,8 +58,8 @@ private fun String.toTrimmedNonBlankLines(): List<String> = trim()
     .filter(String::isNotEmpty)
     .toList()
 
-private fun String.toNormalizedSteps(): List<String> = toTrimmedNonBlankLines()
-    .mapIndexed { index, line -> "${index + 1}. ${line.replace(Regex("^\\d+\\.\\s*"), "")}" }
+private fun String.toNormalizedSteps(startIndex: Int = 0): List<String> = toTrimmedNonBlankLines()
+    .mapIndexed { index, line -> "${startIndex + index + 1}. ${line.replace(Regex("^\\d+\\.\\s*"), "")}" }
 
 private fun String.toExpectedLines(): List<String> = toTrimmedNonBlankLines()
     .map { line -> "・${line.replace(Regex("^[*+\\-]\\s+(?:\\[[ xX]\\]\\s+)?"), "")}" }
