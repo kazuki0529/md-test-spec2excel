@@ -66,6 +66,7 @@ private fun String.toExpectedLines(): List<String> = toTrimmedNonBlankLines()
 
 private fun String.toNoteLines(): List<String> = lineSequence()
     .filterNot { it.trimStart().startsWith("```") }
+    .filter { it.isNotEmpty() }
     .toList()
 
 /**

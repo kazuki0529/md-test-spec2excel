@@ -28,6 +28,13 @@ fun convertMdToExcel(mdSpecDir: String, template: String, out: String) {
     convertMdToExcel(Paths.get(mdSpecDir), Paths.get(template), Paths.get(out))
 }
 
+/**
+ * 指定ディレクトリ内の Markdown ファイルを読み込み、JXls 形式の Excel テンプレートへ出力する。
+ *
+ * @param mdSpecDir Markdown ファイルが格納されたディレクトリ
+ * @param template JXls 形式の Excel テンプレートファイル
+ * @param out 出力先 Excel ファイル
+ */
 fun convertMdToExcel(mdSpecDir: Path, template: Path, out: Path) {
     logger.info("Start")
 
