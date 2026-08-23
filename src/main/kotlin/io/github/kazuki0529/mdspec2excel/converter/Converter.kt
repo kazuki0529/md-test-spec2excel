@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.stream.Collectors
 
 private val logger = LoggerFactory.getLogger("Converter")
 
@@ -43,13 +42,12 @@ fun convertMdToExcel(mdSpecDir: Path, template: Path, out: Path) {
         entries
             .filter { Files.isRegularFile(it) && it.fileName.toString().lowercase().endsWith(".md") }
             .sorted()
-            .collect(Collectors.toList())
-            .asSequence()
-            .map { path ->
+            .forEach { path ->
                 logger.info("Processing: ${path.fileName}")
-                parseSpec(path.toFile()).also { logger.debug("{}", it) }
+                val spec = parseSpec(path.toFile())
+                logger.debug("{}", spec)
+                context.putVar(spec.fileName, spec)
             }
-            .forEach { context.putVar(it.fileName, it) }
     }
 
     XlsCommentAreaBuilder.addCommandMapping("autoRowHeight", AutoRowHeightCommand::class.java)
