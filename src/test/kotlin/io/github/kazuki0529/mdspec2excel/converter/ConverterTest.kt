@@ -5,29 +5,37 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Path
+import java.nio.file.Paths
 
 class ConverterTest {
 
+    private fun resourcePath(path: String): Path {
+        val resource = requireNotNull(ConverterTest::class.java.classLoader.getResource(path)) {
+            "Test resource not found: $path"
+        }
+        return Paths.get(resource.toURI())
+    }
+
     @Test
     fun `Markdownディレクトリを変換してExcelが出力される`(@TempDir tempDir: Path) {
-        val specsDir = File(ConverterTest::class.java.classLoader.getResource("specs")!!.toURI())
-        val templateFile = ConverterTest::class.java.classLoader.getResource("template.xlsx")!!.path
-        val outFile = tempDir.resolve("out.xlsx").toFile().absolutePath
+        val specsDir = resourcePath("specs")
+        val templateFile = resourcePath("template.xlsx")
+        val outFile = tempDir.resolve("out.xlsx")
 
-        convertMdToExcel(specsDir.absolutePath, templateFile, outFile)
+        convertMdToExcel(specsDir, templateFile, outFile)
 
-        assertTrue(File(outFile).exists(), "出力Excelファイルが生成されること")
-        assertTrue(File(outFile).length() > 0, "出力Excelファイルが空でないこと")
+        assertTrue(outFile.toFile().exists(), "出力Excelファイルが生成されること")
+        assertTrue(outFile.toFile().length() > 0, "出力Excelファイルが空でないこと")
     }
 
     @Test
     fun `空ディレクトリを変換してもエラーにならない`(@TempDir tempDir: Path) {
-        val emptyDir = tempDir.resolve("empty").toFile().also { it.mkdirs() }
-        val templateFile = ConverterTest::class.java.classLoader.getResource("template.xlsx")!!.path
-        val outFile = tempDir.resolve("out_empty.xlsx").toFile().absolutePath
+        val emptyDir = tempDir.resolve("empty").toFile().also { it.mkdirs() }.toPath()
+        val templateFile = resourcePath("template.xlsx")
+        val outFile = tempDir.resolve("out_empty.xlsx")
 
-        convertMdToExcel(emptyDir.absolutePath, templateFile, outFile)
+        convertMdToExcel(emptyDir, templateFile, outFile)
 
-        assertTrue(File(outFile).exists(), "空の場合でも出力Excelファイルが生成されること")
+        assertTrue(outFile.toFile().exists(), "空の場合でも出力Excelファイルが生成されること")
     }
 }

@@ -13,6 +13,61 @@ import com.vladsch.flexmark.util.data.MutableDataSet
 import java.io.File
 import java.nio.charset.StandardCharsets
 
+private data class ParseState(
+    val title: String = "",
+    val mainItem: String = "",
+    val middleItem: String = "",
+    val smallItem: String = "",
+    val steps: List<String> = emptyList(),
+    val expected: List<String> = emptyList(),
+    val notes: List<String> = emptyList()
+)
+
+private fun ParseState.flushCaseTo(cases: MutableList<SpecCase>): ParseState {
+    if (steps.isEmpty() && expected.isEmpty()) {
+        return this
+    }
+    cases += SpecCase(
+        mainItem = mainItem,
+        middleItem = middleItem,
+        smallItem = smallItem,
+        steps = steps.joinToString("\n"),
+        expected = expected.joinToString("\n"),
+        notes = notes.joinToString("\n")
+    )
+    return copy(steps = emptyList(), expected = emptyList(), notes = emptyList())
+}
+
+private fun ParseState.withHeading(level: Int, text: String): ParseState = when (level) {
+    1 -> copy(title = text, mainItem = "", middleItem = "", smallItem = "")
+    2 -> copy(mainItem = text, middleItem = "", smallItem = "")
+    3 -> copy(middleItem = text, smallItem = "")
+    4 -> copy(smallItem = text)
+    else -> this
+}
+
+private fun ParseState.withSteps(list: OrderedList): ParseState = copy(steps = list.chars.toString().toNormalizedSteps())
+
+private fun ParseState.withExpected(list: BulletList): ParseState = copy(expected = list.chars.toString().toExpectedLines())
+
+private fun ParseState.withNotes(codeBlock: FencedCodeBlock): ParseState = copy(notes = codeBlock.chars.toString().toNoteLines())
+
+private fun String.toTrimmedNonBlankLines(): List<String> = trim()
+    .lineSequence()
+    .map(String::trim)
+    .filter(String::isNotEmpty)
+    .toList()
+
+private fun String.toNormalizedSteps(): List<String> = toTrimmedNonBlankLines()
+    .mapIndexed { index, line -> "${index + 1}. ${line.replace(Regex("^\\d+\\.\\s*"), "")}" }
+
+private fun String.toExpectedLines(): List<String> = toTrimmedNonBlankLines()
+    .map { line -> "・${line.replace(Regex("^[*+\\-]\\s+(?:\\[[ xX]\\]\\s+)?"), "")}" }
+
+private fun String.toNoteLines(): List<String> = lineSequence()
+    .filterNot { it.trimStart().startsWith("```") }
+    .toList()
+
 /**
  * Markdown ファイル 1 つを解析して [Spec] を返す。
  *
@@ -27,72 +82,25 @@ fun parseSpec(file: File): Spec {
     val parser = Parser.builder(MutableDataSet()).build()
     val document = parser.parse(file.readLines(StandardCharsets.UTF_8).joinToString("\n"))
 
-    var title = ""
-    var mainItem = ""
-    var middleItem = ""
-    var smallItem = ""
-    var steps = listOf<String>()
-    var expected = listOf<String>()
-    var notes = listOf<String>()
+    var state = ParseState()
     val cases = mutableListOf<SpecCase>()
-
-    /** 現在収集中のフィールドから [SpecCase] を生成して [cases] に追加し、フィールドをリセットする。 */
-    fun flushCase() {
-        if (steps.isNotEmpty() || expected.isNotEmpty()) {
-            cases.add(
-                SpecCase(
-                    mainItem,
-                    middleItem,
-                    smallItem,
-                    steps.joinToString("\n"),
-                    expected.joinToString("\n"),
-                    notes.joinToString("\n")
-                )
-            )
-            steps = listOf()
-            expected = listOf()
-            notes = listOf()
-        }
-    }
 
     var cursor: Node? = document.firstChild
     while (cursor != null) {
-        when (val node = cursor) {
+        state = when (val node = cursor) {
             is Heading -> {
                 // 新しい見出しが来たら前のケースを確定する
-                flushCase()
-                when (node.level) {
-                    1 -> {
-                        title = node.text.toString()
-                        mainItem = ""
-                        middleItem = ""
-                        smallItem = ""
-                    }
-                    2 -> {
-                        mainItem = node.text.toString()
-                        middleItem = ""
-                        smallItem = ""
-                    }
-                    3 -> {
-                        middleItem = node.text.toString()
-                        smallItem = ""
-                    }
-                    4 -> smallItem = node.text.toString()
-                }
+                state.flushCaseTo(cases).withHeading(node.level, node.text.toString())
             }
-            is OrderedList -> steps = node.chars.toString().trim().split("\n").mapIndexed { i, line ->
-                "${i + 1}. " + line.replace("""^\d+\. """.toRegex(), "")
-            }
-            is BulletList -> expected = node.chars.toString().trim().split("\n").map { line ->
-                "・" + line.replace("""^[*+\-] \[ ] """.toRegex(), "")
-            }
-            is FencedCodeBlock -> notes = node.chars.toString().split("\n")
-                .filter { !it.startsWith("```") }
+            is OrderedList -> state.withSteps(node)
+            is BulletList -> state.withExpected(node)
+            is FencedCodeBlock -> state.withNotes(node)
+            else -> state
         }
         cursor = cursor.next
     }
     // 末尾に残った未確定ケースを処理する
-    flushCase()
+    state = state.flushCaseTo(cases)
 
-    return Spec(file.nameWithoutExtension, title, cases)
+    return Spec(file.nameWithoutExtension, state.title, cases)
 }

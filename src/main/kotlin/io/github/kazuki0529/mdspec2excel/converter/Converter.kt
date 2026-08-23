@@ -6,11 +6,10 @@ import org.jxls.builder.xls.XlsCommentAreaBuilder
 import org.jxls.common.Context
 import org.jxls.util.JxlsHelper
 import org.slf4j.LoggerFactory
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
+import java.util.stream.Collectors
 
 private val logger = LoggerFactory.getLogger("Converter")
 
@@ -26,24 +25,29 @@ private val logger = LoggerFactory.getLogger("Converter")
  * @param out 出力先 Excel ファイルのパス
  */
 fun convertMdToExcel(mdSpecDir: String, template: String, out: String) {
+    convertMdToExcel(Paths.get(mdSpecDir), Paths.get(template), Paths.get(out))
+}
+
+fun convertMdToExcel(mdSpecDir: Path, template: Path, out: Path) {
     logger.info("Start")
 
-    val mdDir = Paths.get(mdSpecDir)
-    val specList = mdDir.listDirectoryEntries()
-        .filter { it.name.lowercase().endsWith(".md") }
-        .map { path ->
-            logger.info("Processing: ${path.name}")
-            val spec = parseSpec(path.toFile())
-            logger.debug("{}", spec)
-            spec
-        }
-
-    val context = Context().apply {
-        specList.forEach { putVar(it.fileName, it) }
+    val context = Context()
+    Files.list(mdSpecDir).use { entries ->
+        entries
+            .filter { Files.isRegularFile(it) && it.fileName.toString().lowercase().endsWith(".md") }
+            .sorted()
+            .collect(Collectors.toList())
+            .asSequence()
+            .map { path ->
+                logger.info("Processing: ${path.fileName}")
+                parseSpec(path.toFile()).also { logger.debug("{}", it) }
+            }
+            .forEach { context.putVar(it.fileName, it) }
     }
+
     XlsCommentAreaBuilder.addCommandMapping("autoRowHeight", AutoRowHeightCommand::class.java)
-    FileInputStream(template).use { input ->
-        FileOutputStream(out).use { output ->
+    Files.newInputStream(template).use { input ->
+        Files.newOutputStream(out).use { output ->
             JxlsHelper.getInstance().processTemplate(input, output, context)
         }
     }
