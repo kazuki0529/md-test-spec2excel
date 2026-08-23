@@ -1,4 +1,4 @@
-package io.github.kazuki0529.mdspec2excel
+package io.github.kazuki0529.mdspec2excel.excel
 
 import org.jxls.command.AbstractCommand
 import org.jxls.common.CellRef

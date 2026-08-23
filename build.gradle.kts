@@ -13,7 +13,14 @@ repositories {
 
 dependencies {
     implementation("org.jxls:jxls-poi:2.12.0")
-    implementation("com.vladsch.flexmark:flexmark-all:0.64.0")
+    implementation("com.vladsch.flexmark:flexmark-all:0.62.2")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.9.3")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.9.3")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 kotlin {

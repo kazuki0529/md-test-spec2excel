@@ -1,6 +1,12 @@
-package io.github.kazuki0529.mdspec2excel
+package io.github.kazuki0529.mdspec2excel.loader
 
+import io.github.kazuki0529.mdspec2excel.model.Spec
+import io.github.kazuki0529.mdspec2excel.model.SpecCase
+
+import com.vladsch.flexmark.ast.BulletList
+import com.vladsch.flexmark.ast.FencedCodeBlock
 import com.vladsch.flexmark.ast.Heading
+import com.vladsch.flexmark.ast.OrderedList
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.ast.Node
@@ -13,6 +19,7 @@ import java.nio.charset.StandardCharsets
  */
 class SpecLoader(specFile: File) {
     var cursor: Node? = null
+        private set
     private var document: Document
 
     var title = ""
@@ -45,7 +52,7 @@ class SpecLoader(specFile: File) {
 
     fun next(): Boolean {
         this.cursor = this.cursor?.next
-        if (this.isNewCase() || this.cursor == null) {
+        if (this.isNewCase() || (this.cursor == null && (this.steps.isNotEmpty() || this.expected.isNotEmpty()))) {
             this.cases.add(
                 SpecCase(
                     this.mainItem,
@@ -93,5 +100,28 @@ class SpecLoader(specFile: File) {
 
     fun notifyNotes(value: String) {
         this.notes = value.split("\n").filter { !it.startsWith("```") }
+    }
+
+    companion object {
+        /**
+         * Markdown ファイル1つを解析して [Spec] を返す
+         */
+        fun parse(file: File): Spec {
+            val loader = SpecLoader(file)
+            do {
+                when (val current = loader.cursor) {
+                    is Heading -> when (current.level) {
+                        1 -> loader.notifyTitle(current.text.toString())
+                        2 -> loader.notifyMainItem(current.text.toString())
+                        3 -> loader.notifyMiddleItem(current.text.toString())
+                        4 -> loader.notifySmallItem(current.text.toString())
+                    }
+                    is OrderedList -> loader.notifySteps(current.chars.toString())
+                    is BulletList -> loader.notifyExpected(current.chars.toString())
+                    is FencedCodeBlock -> loader.notifyNotes(current.chars.toString())
+                }
+            } while (loader.next())
+            return Spec(file.nameWithoutExtension, loader.title, loader.cases)
+        }
     }
 }
