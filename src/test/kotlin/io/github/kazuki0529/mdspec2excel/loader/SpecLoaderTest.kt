@@ -61,7 +61,7 @@ class SpecLoaderTest {
     @Test
     fun `備考のコードフェンスが除去される`() {
         val notes = spec.cases[0].notes
-        assertTrue(!notes.contains("```"), "notes should not contain backticks but was: $notes")
+        assertTrue(!notes.contains("```"), "notes should not contain code fence markers but was: $notes")
     }
 
     @Test
