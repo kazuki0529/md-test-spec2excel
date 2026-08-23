@@ -1,5 +1,7 @@
 # MdTestSpec2Excel
 
+![CI](https://github.com/kazuki0529/md-test-spec2excel/actions/workflows/ci.yml/badge.svg)
+
 ## 概要
 
 Markdown形式で記載したテスト仕様書を、Excelに変換するツール。  
@@ -8,20 +10,31 @@ MarkdownファイルごとにExcelを出力するのではなく、
 
 ## 実行方法
 
-### スクリプト実行
+### Fat jar
 
 ```bash
-md_dir={path_to_markdown_directory}
-template_excel={path_to_template_excel_file}
-output_excel={path_to_output_excel_file}
+# ビルド（Java 8 以上が必要）
+./gradlew shadowJar
 
-./src/converter.main.kts ${md_dir} ${template_excel} ${output_excel}
+# 実行
+java -jar build/libs/md-test-spec2excel-1.0.0.jar \
+  <path-to-markdown-dir> \
+  <path-to-template-excel-file> \
+  <path-to-output-excel-file>
+
+# 例
+java -jar build/libs/md-test-spec2excel-1.0.0.jar \
+  example template/template.xlsx dist/out.xlsx
 ```
 
 ### Docker
 
 ```bash
-docker run -it --rm \
-  -v $(pwd):/workspaces kazuki0529/md-test-spec2excel \
+# イメージのビルド
+docker build -f docker/Dockerfile -t md-test-spec2excel .
+
+# 実行
+docker run --rm \
+  -v $(pwd):/workspaces md-test-spec2excel \
     /workspaces/example /workspaces/template/template.xlsx /workspaces/dist/out.xlsx
 ```

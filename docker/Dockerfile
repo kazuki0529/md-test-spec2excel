@@ -1,13 +1,12 @@
-FROM holgerbrandl/kscript:4.1.1
+FROM eclipse-temurin:8-jdk AS builder
 
-COPY src /usr/local/src
+WORKDIR /app
+COPY . .
+RUN ./gradlew shadowJar --no-daemon
 
-ENV KOTLIN_HOME=/opt/kotlinc
-ENV PATH=/opt/kotlinc/bin:${PATH}
-
-# 依存関係ダウンロード用に一度実行する
-RUN /usr/bin/env kotlin /usr/local/src/converter.main.kts || true
+FROM eclipse-temurin:8-jre
 
 WORKDIR /workspaces
+COPY --from=builder /app/build/libs/md-test-spec2excel-1.0.0.jar /app/md-test-spec2excel.jar
 
-ENTRYPOINT ["/usr/bin/env", "kotlin", "/usr/local/src/converter.main.kts"]
+ENTRYPOINT ["java", "-jar", "/app/md-test-spec2excel.jar"]
