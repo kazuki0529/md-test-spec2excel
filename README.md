@@ -15,16 +15,16 @@ Markdown ファイルごとに別々の Excel を出力するのではなく、
 
 ## クイックスタート
 
-```bash
-# 1. ビルド（Java 8 以上が必要）
-./gradlew shadowJar
+Docker が使える環境であれば、Java や Gradle のインストールなしにすぐ実行できます。
 
-# 2. 出力先ディレクトリを作成
+```bash
+# 1. 出力先ディレクトリを作成
 mkdir -p dist
 
-# 3. サンプルを実行
-java -jar build/libs/md-test-spec2excel-1.0.0.jar \
-  example template/template.xlsx dist/out.xlsx
+# 2. サンプルを実行（カレントディレクトリを /workspaces にマウント）
+docker run --rm \
+  -v $(pwd):/workspaces kazuki0529/md-test-spec2excel \
+    /workspaces/example /workspaces/template/template.xlsx /workspaces/dist/out.xlsx
 ```
 
 `dist/out.xlsx` が生成されていれば成功です。
