@@ -14,7 +14,7 @@ class SpecLoaderTest {
     @BeforeEach
     fun setUp() {
         val file = File(SpecLoaderTest::class.java.classLoader.getResource("specs/sample.md")!!.toURI())
-        spec = SpecLoader.parse(file)
+        spec = parseSpec(file)
     }
 
     @Test

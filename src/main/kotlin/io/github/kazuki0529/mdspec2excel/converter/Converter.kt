@@ -1,19 +1,23 @@
 package io.github.kazuki0529.mdspec2excel.converter
 
 import io.github.kazuki0529.mdspec2excel.excel.AutoRowHeightCommand
-import io.github.kazuki0529.mdspec2excel.loader.SpecLoader
+import io.github.kazuki0529.mdspec2excel.loader.parseSpec
 import org.jxls.builder.xls.XlsCommentAreaBuilder
 import org.jxls.common.Context
 import org.jxls.util.JxlsHelper
-import java.io.File
+import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.file.Paths
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
+
+private val logger = LoggerFactory.getLogger("Converter")
 
 /**
  * 指定ディレクトリ内の Markdown ファイルをすべて読み込み、JXls 形式の Excel テンプレートへ出力する。
  *
- * ディレクトリ内の `.md` ファイルを列挙し、[SpecLoader.parse] でパースした結果を
+ * ディレクトリ内の `.md` ファイルを列挙し、[parseSpec] でパースした結果を
  * JXls の [Context] に登録したうえでテンプレートを処理する。
  * 各ファイルの変数名にはファイル名（拡張子なし）が使用される。
  *
@@ -22,14 +26,15 @@ import java.nio.file.Paths
  * @param out 出力先 Excel ファイルのパス
  */
 fun convertMdToExcel(mdSpecDir: String, template: String, out: String) {
-    println("######### Start #########")
+    logger.info("Start")
 
     val mdDir = Paths.get(mdSpecDir)
-    val specList = (File(mdSpecDir).list()?.filter { it.lowercase().endsWith(".md") } ?: emptyList())
-        .map { fileName ->
-            println("---------- $fileName ----------")
-            val spec = SpecLoader.parse(mdDir.resolve(fileName).toFile())
-            println(spec)
+    val specList = mdDir.listDirectoryEntries()
+        .filter { it.name.lowercase().endsWith(".md") }
+        .map { path ->
+            logger.info("Processing: ${path.name}")
+            val spec = parseSpec(path.toFile())
+            logger.debug("{}", spec)
             spec
         }
 
@@ -43,5 +48,5 @@ fun convertMdToExcel(mdSpecDir: String, template: String, out: String) {
         }
     }
 
-    println("######### Finished #########")
+    logger.info("Finished")
 }
