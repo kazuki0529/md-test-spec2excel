@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import java.io.File
+import java.nio.file.Path
 
 class SpecLoaderTest {
 
@@ -64,5 +66,35 @@ class SpecLoaderTest {
     @Test
     fun `大項目２のケースが正しく取得できる`() {
         assertEquals("大項目２", spec.cases[2].mainItem)
+    }
+
+    @Test
+    fun `同じ大項目配下の次ケースでも大項目が引き継がれる`() {
+        assertEquals("大項目１", spec.cases[1].mainItem)
+    }
+
+    @Test
+    fun `大項目が切り替わった後は中項目がリセットされる`(@TempDir tempDir: Path) {
+        val markdown = """
+            # タイトル
+
+            ## 大項目1
+            ### 中項目1
+            #### 小項目1
+            1. 手順1
+            - [ ] 想定1
+
+            ## 大項目2
+            #### 小項目2
+            1. 手順2
+            - [ ] 想定2
+        """.trimIndent()
+        val file = tempDir.resolve("spec.md").toFile().apply { writeText(markdown) }
+
+        val parsed = parseSpec(file)
+
+        assertEquals(2, parsed.cases.size)
+        assertEquals("大項目2", parsed.cases[1].mainItem)
+        assertEquals("", parsed.cases[1].middleItem)
     }
 }

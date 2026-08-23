@@ -49,9 +49,6 @@ fun parseSpec(file: File): Spec {
                     notes.joinToString("\n")
                 )
             )
-            mainItem = ""
-            middleItem = ""
-            smallItem = ""
             steps = listOf()
             expected = listOf()
             notes = listOf()
@@ -65,9 +62,21 @@ fun parseSpec(file: File): Spec {
                 // 新しい見出しが来たら前のケースを確定する
                 if (steps.isNotEmpty() || expected.isNotEmpty()) flushCase()
                 when (node.level) {
-                    1 -> title = node.text.toString()
-                    2 -> mainItem = node.text.toString()
-                    3 -> middleItem = node.text.toString()
+                    1 -> {
+                        title = node.text.toString()
+                        mainItem = ""
+                        middleItem = ""
+                        smallItem = ""
+                    }
+                    2 -> {
+                        mainItem = node.text.toString()
+                        middleItem = ""
+                        smallItem = ""
+                    }
+                    3 -> {
+                        middleItem = node.text.toString()
+                        smallItem = ""
+                    }
                     4 -> smallItem = node.text.toString()
                 }
             }
