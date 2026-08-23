@@ -18,10 +18,14 @@ jobs:
           java-version: '8'
       - name: Build shadow JAR
         run: ./gradlew shadowJar
+      - name: Rename JAR to release tag name
+        run: |
+          src=$(ls build/libs/md-test-spec2excel-*.jar | head -1)
+          mv "$src" "build/libs/md-test-spec2excel-${{ github.event.release.tag_name }}.jar"
       - name: Upload JAR to release
         uses: softprops/action-gh-release@v1
         with:
-          files: build/libs/md-test-spec2excel-*.jar
+          files: build/libs/md-test-spec2excel-${{ github.event.release.tag_name }}.jar
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
