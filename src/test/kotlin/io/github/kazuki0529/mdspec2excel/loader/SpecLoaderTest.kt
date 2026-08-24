@@ -182,7 +182,7 @@ class SpecLoaderTest {
             val parsed = parseMarkdown(tempDir, markdown)
 
             assertEquals(
-                listOf("1. 一行目", "  二行目", "2. 三行目"),
+                listOf("1. 一行目", "   二行目", "2. 三行目"),
                 parsed.cases[0].steps.split("\n"),
                 "actual steps=${parsed.cases[0].steps}"
             )

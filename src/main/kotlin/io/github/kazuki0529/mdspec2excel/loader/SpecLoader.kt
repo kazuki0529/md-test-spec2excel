@@ -84,7 +84,7 @@ private fun String.toNormalizedStep(index: Int): String? {
         return null
     }
 
-    return (listOf("${index + 1}. $firstLine") + lines.toContinuationLines()).joinToString("\n")
+    return (listOf("${index + 1}. $firstLine") + lines.toContinuationLines("   ")).joinToString("\n")
 }
 
 private fun BulletList.toExpectedLines(): List<String> {
@@ -113,10 +113,10 @@ private fun String.toExpectedLine(): String? {
         return null
     }
 
-    return (listOf("・$firstLine") + lines.toContinuationLines()).joinToString("\n")
+    return (listOf("・$firstLine") + lines.toContinuationLines("  ")).joinToString("\n")
 }
 
-private fun List<String>.toContinuationLines(): List<String> = drop(1).map { "  ${it.trim()}" }
+private fun List<String>.toContinuationLines(indent: String): List<String> = drop(1).map { "$indent${it.trim()}" }
 
 private fun String.toNoteLines(): List<String> = lineSequence()
     .filterNot { it.trimStart().startsWith("```") }
