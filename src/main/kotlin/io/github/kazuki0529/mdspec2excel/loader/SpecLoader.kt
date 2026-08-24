@@ -96,15 +96,15 @@ private val validVarNamePattern = Regex("""^[A-Za-z_$][A-Za-z0-9_$]*$""")
  * 3列（論理名 / 変数名 / 値）を前提とし、同一キーは後勝ちで上書きする。
  */
 private fun TableBlock.toCustomFieldMap(): Map<String, String> = firstChild
-    .children()
+    .selfAndFollowingSiblings()
     .filterIsInstance<TableBody>()
-    .flatMap { it.firstChild.children().filterIsInstance<TableRow>() }
+    .flatMap { it.firstChild.selfAndFollowingSiblings().filterIsInstance<TableRow>() }
     .mapNotNull(TableRow::toCustomFieldEntryOrNull)
     .toMap(linkedMapOf())
 
 private fun TableRow.toCustomFieldEntryOrNull(): Pair<String, String>? {
     val values = firstChild
-        .children()
+        .selfAndFollowingSiblings()
         .filterIsInstance<TableCell>()
         .map { it.text.toString().trim() }
         .toList()
@@ -120,8 +120,8 @@ private fun TableRow.toCustomFieldEntryOrNull(): Pair<String, String>? {
     return key to values[CUSTOM_FIELD_VALUE_COLUMN_INDEX]
 }
 
-private fun Node?.children(): Sequence<Node> = sequence {
-    var cursor = this@children
+private fun Node?.selfAndFollowingSiblings(): Sequence<Node> = sequence {
+    var cursor = this@selfAndFollowingSiblings
     while (cursor != null) {
         yield(cursor)
         cursor = cursor.next
