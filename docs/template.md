@@ -19,6 +19,7 @@ front matter がない場合、`mdSpec.md` というファイルであれば `${
 | `${case.steps}` | `String` | 確認手順（改行区切り） |
 | `${case.expected}` | `String` | 想定動作（改行区切り） |
 | `${case.notes}` | `String` | 備考（改行区切り） |
+| `${case.customFields}` | `Map<String, String>` | カスタム変数テーブルから取得した任意フィールド |
 
 > `varName` の部分は front matter の `var` 値（または Markdown ファイル名・拡張子なし）に置き換えてください。
 
@@ -40,6 +41,13 @@ front matter がない場合、`mdSpec.md` というファイルであれば `${
 - **`var="case"`** でループ変数名を指定します
 - **`${case.mainItem}`** 等の式がセルの値として展開されます
 - ファイル名（`mdSpec`）の部分は Markdown ファイル名（拡張子なし）に合わせてください
+
+カスタム変数の参照例:
+
+```
+${case.customFields['priority']}   // High
+${case.customFields['tester_id']}  // user123
+```
 
 ## 参考
 
