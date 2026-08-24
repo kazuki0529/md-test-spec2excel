@@ -3,12 +3,14 @@ package io.github.kazuki0529.mdspec2excel.model
 /**
  * Markdown ファイル 1 つ分のテスト仕様を表すエンティティ。
  *
- * @property fileName ファイル名（拡張子なし）。JXls テンプレート内での変数名として使用される。
+ * @property fileName ファイル名（拡張子なし）。
+ * @property varName JXls テンプレート内での変数名。front matter の `var` キーが優先され、未指定の場合は [fileName] が使用される。
  * @property title Markdown の `# 見出し 1` から取得したテスト仕様のタイトル。
  * @property cases このファイルに含まれるテストケースの一覧。
  */
 data class Spec(
     val fileName: String,
+    val varName: String,
     val title: String,
     val cases: List<SpecCase>
 )

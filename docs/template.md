@@ -5,13 +5,14 @@
 
 ## テンプレート内で使用できる変数
 
-Markdown ファイルのファイル名（拡張子なし）が変数名になります。  
-例えば `mdSpec.md` というファイルを変換した場合、テンプレート内では `${mdSpec.title}` のように参照できます。
+変数名は front matter の `var` キーで指定します。未指定の場合はファイル名（拡張子なし）が変数名になります。  
+例えば front matter に `var: loginSpec` と記載した場合、テンプレート内では `${loginSpec.title}` のように参照できます。  
+front matter がない場合、`mdSpec.md` というファイルであれば `${mdSpec.title}` のように参照できます。
 
 | 変数 | 型 | 説明 |
 |---|---|---|
-| `${fileName.title}` | `String` | Markdown の `# 見出し1` から取得したタイトル |
-| `${fileName.cases}` | `List<SpecCase>` | テストケースの一覧 |
+| `${varName.title}` | `String` | Markdown の `# 見出し1` から取得したタイトル |
+| `${varName.cases}` | `List<SpecCase>` | テストケースの一覧 |
 | `${case.mainItem}` | `String` | 大項目（`## 見出し2`） |
 | `${case.middleItem}` | `String` | 中項目（`### 見出し3`） |
 | `${case.smallItem}` | `String` | 小項目（`#### 見出し4`） |
@@ -19,7 +20,7 @@ Markdown ファイルのファイル名（拡張子なし）が変数名にな�
 | `${case.expected}` | `String` | 想定動作（改行区切り） |
 | `${case.notes}` | `String` | 備考（改行区切り） |
 
-> `fileName` の部分は実際の Markdown ファイル名（拡張子なし）に置き換えてください。
+> `varName` の部分は front matter の `var` 値（または Markdown ファイル名・拡張子なし）に置き換えてください。
 
 ## テンプレートの書き方
 
