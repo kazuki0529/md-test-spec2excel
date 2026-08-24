@@ -24,6 +24,7 @@ data class Spec(
  * @property steps 順序付きリストから取得した確認手順（改行区切りの文字列）。
  * @property expected 箇条書きリストから取得した想定動作（改行区切りの文字列）。
  * @property notes コードブロックから取得した備考（改行区切りの文字列）。
+ * @property customFields カスタム変数テーブル（`| 論理名 | 変数名 | 値 |`）から取得した任意フィールド。
  */
 data class SpecCase(
     val mainItem: String,
@@ -31,5 +32,6 @@ data class SpecCase(
     val smallItem: String,
     val steps: String,
     val expected: String,
-    val notes: String
+    val notes: String,
+    val customFields: Map<String, String> = emptyMap()
 )
