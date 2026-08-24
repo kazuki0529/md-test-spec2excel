@@ -143,6 +143,60 @@ class SpecLoaderTest {
         }
     }
 
+    @Nested
+    inner class `カスタム変数テーブル` {
+        @Test
+        fun `3列テーブルから customFields を取り込む`(@TempDir tempDir: Path) {
+            val markdown = """
+                # タイトル
+                ## 大項目
+                ### 中項目
+                #### 小項目
+                1. 手順1
+                - [ ] 想定1
+
+                | 論理名 | 変数名 | 値 |
+                |---|---|---|
+                | 優先度 | priority | High |
+                | テスター | tester_id | user123 |
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals(
+                mapOf("priority" to "High", "tester_id" to "user123"),
+                parsed.cases[0].customFields
+            )
+        }
+
+        @Test
+        fun `複数テーブルは後勝ちでマージされる`(@TempDir tempDir: Path) {
+            val markdown = """
+                # タイトル
+                ## 大項目
+                ### 中項目
+                #### 小項目
+                1. 手順1
+                - [ ] 想定1
+
+                | 論理名 | 変数名 | 値 |
+                |---|---|---|
+                | 優先度 | priority | Low |
+                | テスター | tester_id | user111 |
+
+                | 論理名 | 変数名 | 値 |
+                |---|---|---|
+                | 優先度 | priority | High |
+                | バージョン | min_version | 1.0 |
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals(
+                mapOf("priority" to "High", "tester_id" to "user111", "min_version" to "1.0"),
+                parsed.cases[0].customFields
+            )
+        }
+    }
+
     @Test
     fun `手順と想定動作がない場合はケースを生成しない`(@TempDir tempDir: Path) {
         val markdown = """
@@ -155,6 +209,21 @@ class SpecLoaderTest {
 
         assertEquals("タイトル", parsed.title)
         assertTrue(parsed.cases.isEmpty(), "steps/expected がない場合はケース0件")
+    }
+
+    @Test
+    fun `テーブルがないケースでは customFields は空`(@TempDir tempDir: Path) {
+        val markdown = """
+            # タイトル
+            ## 大項目
+            ### 中項目
+            #### 小項目
+            1. 手順1
+            - [ ] 想定1
+        """.trimIndent()
+        val parsed = parseMarkdown(tempDir, markdown)
+
+        assertEquals(emptyMap<String, String>(), parsed.cases[0].customFields)
     }
 
     @Nested

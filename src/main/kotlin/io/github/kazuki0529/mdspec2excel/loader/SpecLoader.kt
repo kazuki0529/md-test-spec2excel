@@ -7,6 +7,11 @@ import com.vladsch.flexmark.ast.BulletList
 import com.vladsch.flexmark.ast.FencedCodeBlock
 import com.vladsch.flexmark.ast.Heading
 import com.vladsch.flexmark.ast.OrderedList
+import com.vladsch.flexmark.ext.tables.TableBlock
+import com.vladsch.flexmark.ext.tables.TableBody
+import com.vladsch.flexmark.ext.tables.TableCell
+import com.vladsch.flexmark.ext.tables.TableRow
+import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.parser.Parser
@@ -22,7 +27,8 @@ private data class ParseState(
     val smallItem: String = "",
     val steps: List<String> = emptyList(),
     val expected: List<String> = emptyList(),
-    val notes: List<String> = emptyList()
+    val notes: List<String> = emptyList(),
+    val customFields: Map<String, String> = emptyMap()
 )
 
 private fun ParseState.flushCaseTo(cases: MutableList<SpecCase>): ParseState {
@@ -35,16 +41,17 @@ private fun ParseState.flushCaseTo(cases: MutableList<SpecCase>): ParseState {
         smallItem = smallItem,
         steps = steps.joinToString("\n"),
         expected = expected.joinToString("\n"),
-        notes = notes.joinToString("\n")
+        notes = notes.joinToString("\n"),
+        customFields = customFields
     )
-    return copy(steps = emptyList(), expected = emptyList(), notes = emptyList())
+    return copy(steps = emptyList(), expected = emptyList(), notes = emptyList(), customFields = emptyMap())
 }
 
 private fun ParseState.withHeading(level: Int, text: String): ParseState = when (level) {
-    1 -> copy(title = text, mainItem = "", middleItem = "", smallItem = "")
-    2 -> copy(mainItem = text, middleItem = "", smallItem = "")
-    3 -> copy(middleItem = text, smallItem = "")
-    4 -> copy(smallItem = text)
+    1 -> copy(title = text, mainItem = "", middleItem = "", smallItem = "", customFields = emptyMap())
+    2 -> copy(mainItem = text, middleItem = "", smallItem = "", customFields = emptyMap())
+    3 -> copy(middleItem = text, smallItem = "", customFields = emptyMap())
+    4 -> copy(smallItem = text, customFields = emptyMap())
     else -> this
 }
 
@@ -53,6 +60,8 @@ private fun ParseState.withSteps(list: OrderedList): ParseState = copy(steps = s
 private fun ParseState.withExpected(list: BulletList): ParseState = copy(expected = expected + list.chars.toString().toExpectedLines())
 
 private fun ParseState.withNotes(codeBlock: FencedCodeBlock): ParseState = copy(notes = notes + codeBlock.chars.toString().toNoteLines())
+
+private fun ParseState.withCustomFields(table: TableBlock): ParseState = copy(customFields = customFields + table.toCustomFieldMap())
 
 private fun String.toTrimmedNonBlankLines(): List<String> = trim()
     .lineSequence()
@@ -71,6 +80,39 @@ private fun String.toNoteLines(): List<String> = lineSequence()
     .filter { it.isNotEmpty() }
     .toList()
 
+private val validVarNamePattern = Regex("^[A-Za-z_$][A-Za-z0-9_$]*$")
+
+private fun TableBlock.toCustomFieldMap(): Map<String, String> {
+    val result = linkedMapOf<String, String>()
+    var section: Node? = firstChild
+    while (section != null) {
+        if (section is TableBody) {
+            var row: Node? = section.firstChild
+            while (row != null) {
+                if (row is TableRow) {
+                    val values = mutableListOf<String>()
+                    var cell: Node? = row.firstChild
+                    while (cell != null) {
+                        if (cell is TableCell) {
+                            values += cell.text.toString().trim()
+                        }
+                        cell = cell.next
+                    }
+                    if (values.size >= 3) {
+                        val key = values[1]
+                        if (validVarNamePattern.matches(key)) {
+                            result[key] = values[2]
+                        }
+                    }
+                }
+                row = row.next
+            }
+        }
+        section = section.next
+    }
+    return result
+}
+
 /**
  * Markdown ファイル 1 つを解析して [Spec] を返す。
  *
@@ -82,7 +124,13 @@ private fun String.toNoteLines(): List<String> = lineSequence()
  * @return パース結果の [Spec]
  */
 fun parseSpec(file: File): Spec {
-    val options = MutableDataSet().set(Parser.EXTENSIONS, listOf(YamlFrontMatterExtension.create()))
+    val options = MutableDataSet().set(
+        Parser.EXTENSIONS,
+        listOf(
+            YamlFrontMatterExtension.create(),
+            TablesExtension.create()
+        )
+    )
     val parser = Parser.builder(options).build()
     val document = parser.parse(file.readLines(StandardCharsets.UTF_8).joinToString("\n"))
 
@@ -104,6 +152,7 @@ fun parseSpec(file: File): Spec {
             is OrderedList -> state.withSteps(node)
             is BulletList -> state.withExpected(node)
             is FencedCodeBlock -> state.withNotes(node)
+            is TableBlock -> state.withCustomFields(node)
             else -> state
         }
         cursor = cursor.next
