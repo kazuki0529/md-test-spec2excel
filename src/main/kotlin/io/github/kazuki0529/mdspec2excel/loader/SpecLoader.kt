@@ -100,7 +100,10 @@ private fun TableBlock.toCustomFieldMap(): Map<String, String> = firstChild
     .filterIsInstance<TableBody>()
     .flatMap { it.firstChild.selfAndFollowingSiblings().filterIsInstance<TableRow>() }
     .mapNotNull(TableRow::toCustomFieldEntryOrNull)
-    .toMap(linkedMapOf())
+    .fold(linkedMapOf()) { acc, (key, value) ->
+        acc[key] = value
+        acc
+    }
 
 private fun TableRow.toCustomFieldEntryOrNull(): Pair<String, String>? {
     val values = firstChild
