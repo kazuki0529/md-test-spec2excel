@@ -18,6 +18,23 @@ var: loginSpec
 
 > **例:** `var: loginSpec` と指定すると、テンプレート内で `${loginSpec.title}` のように参照できます。
 
+### `var` に指定できる文字
+
+`var` の値は **Java / JEXL の識別子**として有効な文字列を指定してください。
+
+- 使用できる文字：英字（`a`〜`z`, `A`〜`Z`）、数字（`0`〜`9`）、アンダースコア（`_`）、ドル記号（`$`）
+- 先頭は英字またはアンダースコアにしてください（数字から始めることはできません）
+- **日本語・空白・ハイフン（`-`）などは使用できません**
+
+**推奨命名規則:**
+
+| スタイル | 例 |
+|---|---|
+| camelCase（推奨） | `loginSpec`, `userRegistration` |
+| snake_case | `login_spec`, `user_registration` |
+
+> JXls の式エンジン（JEXL）の詳細は [JXls 公式ドキュメント](https://jxls.sourceforge.net/) を参照してください。
+
 ## 全体構造
 
 | Markdown 要素 | 対応するフィールド | 説明 |
