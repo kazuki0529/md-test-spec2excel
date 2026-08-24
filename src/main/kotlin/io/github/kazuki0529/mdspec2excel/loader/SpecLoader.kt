@@ -20,6 +20,15 @@ import com.vladsch.flexmark.util.data.MutableDataSet
 import java.io.File
 import java.nio.charset.StandardCharsets
 
+private const val HEADING_LEVEL_TITLE = 1
+private const val HEADING_LEVEL_MAIN_ITEM = 2
+private const val HEADING_LEVEL_MIDDLE_ITEM = 3
+private const val HEADING_LEVEL_SMALL_ITEM = 4
+
+private const val CUSTOM_FIELD_MIN_COLUMNS = 3
+private const val CUSTOM_FIELD_KEY_COLUMN_INDEX = 1
+private const val CUSTOM_FIELD_VALUE_COLUMN_INDEX = 2
+
 private data class ParseState(
     val title: String = "",
     val mainItem: String = "",
@@ -48,10 +57,10 @@ private fun ParseState.flushCaseTo(cases: MutableList<SpecCase>): ParseState {
 }
 
 private fun ParseState.withHeading(level: Int, text: String): ParseState = when (level) {
-    1 -> copy(title = text, mainItem = "", middleItem = "", smallItem = "", customFields = emptyMap())
-    2 -> copy(mainItem = text, middleItem = "", smallItem = "", customFields = emptyMap())
-    3 -> copy(middleItem = text, smallItem = "", customFields = emptyMap())
-    4 -> copy(smallItem = text, customFields = emptyMap())
+    HEADING_LEVEL_TITLE -> copy(title = text, mainItem = "", middleItem = "", smallItem = "", customFields = emptyMap())
+    HEADING_LEVEL_MAIN_ITEM -> copy(mainItem = text, middleItem = "", smallItem = "", customFields = emptyMap())
+    HEADING_LEVEL_MIDDLE_ITEM -> copy(middleItem = text, smallItem = "", customFields = emptyMap())
+    HEADING_LEVEL_SMALL_ITEM -> copy(smallItem = text, customFields = emptyMap())
     else -> this
 }
 
@@ -80,37 +89,43 @@ private fun String.toNoteLines(): List<String> = lineSequence()
     .filter { it.isNotEmpty() }
     .toList()
 
-private val validVarNamePattern = Regex("^[A-Za-z_$][A-Za-z0-9_$]*$")
+private val validVarNamePattern = Regex("""^[A-Za-z_$][A-Za-z0-9_$]*$""")
 
-private fun TableBlock.toCustomFieldMap(): Map<String, String> {
-    val result = linkedMapOf<String, String>()
-    var section: Node? = firstChild
-    while (section != null) {
-        if (section is TableBody) {
-            var row: Node? = section.firstChild
-            while (row != null) {
-                if (row is TableRow) {
-                    val values = mutableListOf<String>()
-                    var cell: Node? = row.firstChild
-                    while (cell != null) {
-                        if (cell is TableCell) {
-                            values += cell.text.toString().trim()
-                        }
-                        cell = cell.next
-                    }
-                    if (values.size >= 3) {
-                        val key = values[1]
-                        if (validVarNamePattern.matches(key)) {
-                            result[key] = values[2]
-                        }
-                    }
-                }
-                row = row.next
-            }
-        }
-        section = section.next
+/**
+ * TableBlock から customFields を抽出する。
+ * 3列（論理名 / 変数名 / 値）を前提とし、同一キーは後勝ちで上書きする。
+ */
+private fun TableBlock.toCustomFieldMap(): Map<String, String> = firstChild
+    .children()
+    .filterIsInstance<TableBody>()
+    .flatMap { it.firstChild.children().filterIsInstance<TableRow>() }
+    .mapNotNull(TableRow::toCustomFieldEntryOrNull)
+    .toMap(linkedMapOf())
+
+private fun TableRow.toCustomFieldEntryOrNull(): Pair<String, String>? {
+    val values = firstChild
+        .children()
+        .filterIsInstance<TableCell>()
+        .map { it.text.toString().trim() }
+        .toList()
+
+    if (values.size < CUSTOM_FIELD_MIN_COLUMNS) {
+        return null
     }
-    return result
+
+    val key = values[CUSTOM_FIELD_KEY_COLUMN_INDEX]
+    if (!validVarNamePattern.matches(key)) {
+        return null
+    }
+    return key to values[CUSTOM_FIELD_VALUE_COLUMN_INDEX]
+}
+
+private fun Node?.children(): Sequence<Node> = sequence {
+    var cursor = this@children
+    while (cursor != null) {
+        yield(cursor)
+        cursor = cursor.next
+    }
 }
 
 /**
