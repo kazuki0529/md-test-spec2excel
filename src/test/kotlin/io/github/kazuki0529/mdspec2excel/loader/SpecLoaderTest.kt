@@ -141,6 +141,52 @@ class SpecLoaderTest {
                 "actual expected=${parsed.cases[0].expected}"
             )
         }
+
+        @Test
+        fun `箇条書きの継続行は同一項目として扱いインデントを維持する`(@TempDir tempDir: Path) {
+            val markdown = """
+                # タイトル
+
+                ## 大項目
+                ### 中項目
+                #### 小項目
+                1. 手順1
+
+                - 一行目
+                  二行目
+                - 三行目
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals(
+                listOf("・一行目", "  二行目", "・三行目"),
+                parsed.cases[0].expected.split("\n"),
+                "actual expected=${parsed.cases[0].expected}"
+            )
+        }
+
+        @Test
+        fun `番号付き箇条書きの継続行は同一手順として扱いインデントを維持する`(@TempDir tempDir: Path) {
+            val markdown = """
+                # タイトル
+
+                ## 大項目
+                ### 中項目
+                #### 小項目
+                1. 一行目
+                   二行目
+                1. 三行目
+
+                - 想定
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals(
+                listOf("1. 一行目", "   二行目", "2. 三行目"),
+                parsed.cases[0].steps.split("\n"),
+                "actual steps=${parsed.cases[0].steps}"
+            )
+        }
     }
 
     @Nested

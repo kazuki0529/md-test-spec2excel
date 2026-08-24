@@ -64,25 +64,77 @@ private fun ParseState.withHeading(level: Int, text: String): ParseState = when 
     else -> this
 }
 
-private fun ParseState.withSteps(list: OrderedList): ParseState = copy(steps = steps + list.chars.toString().toNormalizedSteps(steps.size))
+private fun ParseState.withSteps(list: OrderedList): ParseState = copy(steps = steps + list.toNormalizedSteps(steps.size))
 
-private fun ParseState.withExpected(list: BulletList): ParseState = copy(expected = expected + list.chars.toString().toExpectedLines())
+private fun ParseState.withExpected(list: BulletList): ParseState = copy(expected = expected + list.toExpectedLines())
 
 private fun ParseState.withNotes(codeBlock: FencedCodeBlock): ParseState = copy(notes = notes + codeBlock.chars.toString().toNoteLines())
-
 private fun ParseState.withCustomFields(table: TableBlock): ParseState = copy(customFields = customFields + table.toCustomFieldMap())
 
-private fun String.toTrimmedNonBlankLines(): List<String> = trim()
-    .lineSequence()
-    .map(String::trim)
-    .filter(String::isNotEmpty)
+private val orderedListPrefixRegex = Regex("^\\s*\\d+\\.\\s*")
+private val bulletListPrefixRegex = Regex("^\\s*[*+\\-]\\s+(?:\\[[ xX]\\]\\s+)?")
+
+private fun Node.collectListItems(
+    startIndex: Int = 0,
+    transform: (text: String, index: Int) -> String?
+): List<String> {
+    var index = startIndex
+    return generateSequence(firstChild) { it.next }
+        .mapNotNull { item ->
+            transform(item.chars.toString(), index)?.also { index += 1 }
+        }
+        .toList()
+}
+
+private fun String.toListItemSourceLines(): List<String> = lineSequence()
+    .map(String::trimEnd)
+    .filter(String::isNotBlank)
     .toList()
 
-private fun String.toNormalizedSteps(startIndex: Int = 0): List<String> = toTrimmedNonBlankLines()
-    .mapIndexed { index, line -> "${startIndex + index + 1}. ${line.replace(Regex("^\\d+\\.\\s*"), "")}" }
+private fun List<String>.joinListItemLines(firstLine: String, continuationIndent: String): String {
+    val continuationLines = drop(1).map { "$continuationIndent${it.trim()}" }
+    return (listOf(firstLine) + continuationLines).joinToString("\n")
+}
 
-private fun String.toExpectedLines(): List<String> = toTrimmedNonBlankLines()
-    .map { line -> "・${line.replace(Regex("^[*+\\-]\\s+(?:\\[[ xX]\\]\\s+)?"), "")}" }
+private fun OrderedList.toNormalizedSteps(startIndex: Int = 0): List<String> {
+    return collectListItems(startIndex) { text, index -> text.toNormalizedStep(index) }
+}
+
+private fun String.toNormalizedStep(index: Int): String? {
+    val lines = toListItemSourceLines()
+    if (lines.isEmpty()) {
+        return null
+    }
+
+    val firstLine = lines.first()
+        .replace(orderedListPrefixRegex, "")
+        .trim()
+    if (firstLine.isEmpty()) {
+        return null
+    }
+
+    return lines.joinListItemLines("${index + 1}. $firstLine", "   ")
+}
+
+private fun BulletList.toExpectedLines(): List<String> {
+    return collectListItems { text, _ -> text.toExpectedLine() }
+}
+
+private fun String.toExpectedLine(): String? {
+    val lines = toListItemSourceLines()
+    if (lines.isEmpty()) {
+        return null
+    }
+
+    val firstLine = lines.first()
+        .replace(bulletListPrefixRegex, "")
+        .trim()
+    if (firstLine.isEmpty()) {
+        return null
+    }
+
+    return lines.joinListItemLines("・$firstLine", "  ")
+}
 
 private fun String.toNoteLines(): List<String> = lineSequence()
     .filterNot { it.trimStart().startsWith("```") }
