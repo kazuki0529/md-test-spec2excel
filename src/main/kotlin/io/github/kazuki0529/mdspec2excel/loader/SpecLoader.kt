@@ -7,6 +7,8 @@ import com.vladsch.flexmark.ast.BulletList
 import com.vladsch.flexmark.ast.FencedCodeBlock
 import com.vladsch.flexmark.ast.Heading
 import com.vladsch.flexmark.ast.OrderedList
+import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
+import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Node
 import com.vladsch.flexmark.util.data.MutableDataSet
@@ -80,8 +82,14 @@ private fun String.toNoteLines(): List<String> = lineSequence()
  * @return パース結果の [Spec]
  */
 fun parseSpec(file: File): Spec {
-    val parser = Parser.builder(MutableDataSet()).build()
+    val options = MutableDataSet().set(Parser.EXTENSIONS, listOf(YamlFrontMatterExtension.create()))
+    val parser = Parser.builder(options).build()
     val document = parser.parse(file.readLines(StandardCharsets.UTF_8).joinToString("\n"))
+
+    // Read front matter variables
+    val frontMatterVisitor = AbstractYamlFrontMatterVisitor()
+    frontMatterVisitor.visit(document)
+    val frontMatterVar = frontMatterVisitor.data["var"]?.firstOrNull()?.takeIf { it.isNotBlank() }
 
     var state = ParseState()
     val cases = mutableListOf<SpecCase>()
@@ -103,5 +111,7 @@ fun parseSpec(file: File): Spec {
     // 末尾に残った未確定ケースを処理する
     state = state.flushCaseTo(cases)
 
-    return Spec(file.nameWithoutExtension, state.title, cases)
+    val fileName = file.nameWithoutExtension
+    val varName = frontMatterVar ?: fileName
+    return Spec(fileName, varName, state.title, cases)
 }

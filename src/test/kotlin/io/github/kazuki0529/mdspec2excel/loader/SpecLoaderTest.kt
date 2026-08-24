@@ -156,4 +156,58 @@ class SpecLoaderTest {
         assertEquals("タイトル", parsed.title)
         assertTrue(parsed.cases.isEmpty(), "steps/expected がない場合はケース0件")
     }
+
+    @Nested
+    inner class `front matter` {
+        @Test
+        fun `var が指定されている場合はそれが varName になる`(@TempDir tempDir: Path) {
+            val markdown = """
+                ---
+                var: loginSpec
+                ---
+                # ログイン仕様書
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals("loginSpec", parsed.varName)
+        }
+
+        @Test
+        fun `var が未指定のときはファイル名が varName になる`(@TempDir tempDir: Path) {
+            val markdown = """
+                # タイトル
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals("spec", parsed.varName)
+        }
+
+        @Test
+        fun `var が空文字のときはファイル名が varName になる`(@TempDir tempDir: Path) {
+            val markdown = """
+                ---
+                var:
+                ---
+                # タイトル
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals("spec", parsed.varName)
+        }
+
+        @Test
+        fun `front matter の title は見出し1として扱われない`(@TempDir tempDir: Path) {
+            val markdown = """
+                ---
+                var: mySpec
+                title: フロントマタータイトル
+                ---
+                # 見出し1タイトル
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals("mySpec", parsed.varName)
+            assertEquals("見出し1タイトル", parsed.title)
+        }
+    }
 }
