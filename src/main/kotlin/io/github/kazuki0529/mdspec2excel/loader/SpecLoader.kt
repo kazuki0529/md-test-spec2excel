@@ -12,6 +12,7 @@ import com.vladsch.flexmark.ext.tables.TableBody
 import com.vladsch.flexmark.ext.tables.TableCell
 import com.vladsch.flexmark.ext.tables.TableRow
 import com.vladsch.flexmark.ext.tables.TablesExtension
+import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Node
@@ -142,6 +143,12 @@ private fun String.toNoteLines(): List<String> = lineSequence()
 
 private val validVarNamePattern = Regex("""^[A-Za-z_$][A-Za-z0-9_$]*$""")
 
+/** front matter における予約キー: JXls テンプレートの変数名を指定する */
+private const val FRONT_MATTER_KEY_VAR = "spec.var"
+
+/** front matter における予約キーの一覧。ユーザ定義変数収集時に除外する */
+private val FRONT_MATTER_RESERVED_KEYS = setOf(FRONT_MATTER_KEY_VAR)
+
 /**
  * TableBlock から customFields を抽出する。
  * 3列（論理名 / 変数名 / 値）を前提とし、同一キーは後勝ちで上書きする。
@@ -183,73 +190,6 @@ private fun Node?.selfAndFollowingSiblings(): Sequence<Node> = sequence {
 }
 
 /**
- * Markdown ファイルの先頭にある YAML front matter を解析し、
- * トップレベルキーとその値（スカラー文字列 または Map<String, String>）を返す。
- *
- * flexmark の AbstractYamlFrontMatterVisitor はネスト構造を保持しないため、
- * ファイルテキストから直接解析する。2 レベルまでの YAML に対応する。
- *
- * 例:
- * ```
- * spec:
- *   var: mdSpec
- * vars:
- *   feature: ログイン
- * ```
- * → `mapOf("spec" to mapOf("var" to "mdSpec"), "vars" to mapOf("feature" to "ログイン"))`
- *
- * @param lines Markdown ファイルの全行
- * @return トップレベルキーと値のマップ。front matter がない場合は空マップ。
- */
-private fun parseFrontMatter(lines: List<String>): Map<String, Any> {
-    if (lines.isEmpty() || lines[0].trim() != "---") return emptyMap()
-
-    // 2 番目の "---" を探してフロントマター終端を特定する
-    val endIdx = lines.drop(1).indexOfFirst { it.trim() == "---" }
-    if (endIdx < 0) return emptyMap()
-
-    val result = mutableMapOf<String, Any>()
-    var currentBlockKey: String? = null
-    var currentBlock: MutableMap<String, String>? = null
-
-    for (line in lines.drop(1).take(endIdx)) {
-        if (line.isBlank()) continue
-
-        // インデントされた行はネストされたキーとして扱う
-        val isIndented = line.isNotEmpty() && line[0].isWhitespace()
-        if (isIndented) {
-            val colonIdx = line.indexOf(':')
-            if (colonIdx < 0 || currentBlock == null) continue
-            val key = line.substring(0, colonIdx).trim()
-            val value = line.substring(colonIdx + 1).trim()
-            if (key.isNotBlank()) currentBlock[key] = value
-        } else {
-            // 前のブロックを確定する
-            currentBlockKey?.let { k -> currentBlock?.let { result[k] = it } }
-            currentBlock = null
-            currentBlockKey = null
-
-            val colonIdx = line.indexOf(':')
-            if (colonIdx < 0) continue
-            val key = line.substring(0, colonIdx).trim()
-            val value = line.substring(colonIdx + 1).trim()
-            if (value.isNotBlank()) {
-                // スカラー値（例: `title: foo`）
-                result[key] = value
-            } else {
-                // マップブロック（例: `spec:` や `vars:`）
-                currentBlockKey = key
-                currentBlock = mutableMapOf()
-            }
-        }
-    }
-    // 最後のブロックを確定する
-    currentBlockKey?.let { k -> currentBlock?.let { result[k] = it } }
-
-    return result
-}
-
-/**
  * Markdown ファイル 1 つを解析して [Spec] を返す。
  *
  * flexmark-java を使用して Markdown の AST を先頭から末尾まで走査し、
@@ -268,19 +208,20 @@ fun parseSpec(file: File): Spec {
         )
     )
     val parser = Parser.builder(options).build()
-    // ファイルを一度だけ読み込み、AST パースとフロントマター解析の両方に使う
-    val fileLines = file.readLines(StandardCharsets.UTF_8)
-    val document = parser.parse(fileLines.joinToString("\n"))
+    val document = parser.parse(file.readLines(StandardCharsets.UTF_8).joinToString("\n"))
 
-    // フロントマターを直接ファイルテキストから解析する
-    val frontMatter = parseFrontMatter(fileLines)
+    // front matter を AbstractYamlFrontMatterVisitor で取得する
+    val frontMatterVisitor = AbstractYamlFrontMatterVisitor()
+    frontMatterVisitor.visit(document)
+    val frontMatterData = frontMatterVisitor.data
 
-    @Suppress("UNCHECKED_CAST")
-    val specBlock = frontMatter["spec"] as? Map<String, String> ?: emptyMap()
-    val frontMatterVar = specBlock["var"]?.takeIf { it.isNotBlank() }
+    // 予約キー: spec.var → varName
+    val frontMatterVar = frontMatterData[FRONT_MATTER_KEY_VAR]?.firstOrNull()?.takeIf { it.isNotBlank() }
 
-    @Suppress("UNCHECKED_CAST")
-    val frontMatterVars: Map<String, String> = frontMatter["vars"] as? Map<String, String> ?: emptyMap()
+    // 予約キー以外のすべてのキーをユーザ定義変数として収集する
+    val frontMatterVars: Map<String, String> = frontMatterData
+        .filterKeys { it !in FRONT_MATTER_RESERVED_KEYS }
+        .mapValues { (_, values) -> values.firstOrNull() ?: "" }
 
     var state = ParseState()
     val cases = mutableListOf<SpecCase>()

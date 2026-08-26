@@ -13,7 +13,7 @@ front matter がない場合、`mdSpec.md` というファイルであれば `${
 |---|---|---|
 | `${varName.title}` | `String` | Markdown の `# 見出し1` から取得したタイトル |
 | `${varName.cases}` | `List<SpecCase>` | テストケースの一覧 |
-| `${varName.vars}` | `Map<String, String>` | front matter の `vars` で定義したユーザ定義変数 |
+| `${varName.vars}` | `Map<String, String>` | front matter の `spec.var` 以外のキーで定義したユーザ定義変数 |
 | `${case.mainItem}` | `String` | 大項目（`## 見出し2`） |
 | `${case.middleItem}` | `String` | 中項目（`### 見出し3`） |
 | `${case.smallItem}` | `String` | 小項目（`#### 見出し4`） |
@@ -50,7 +50,7 @@ ${mdSpec.vars.feature}
 ${mdSpec.vars.viewpoint}
 ```
 
-`vars.feature` は `ログイン`、`vars.viewpoint` は `正常系` がそれぞれ展開されます。
+`feature`、`viewpoint` はそれぞれ front matter で定義した値が展開されます。
 
 カスタム変数の参照例:
 
