@@ -22,7 +22,7 @@ front matter がない場合、`mdSpec.md` というファイルであれば `${
 | `${case.notes}` | `String` | 備考（改行区切り） |
 | `${case.customFields}` | `Map<String, String>` | カスタム変数テーブルから取得した任意フィールド |
 
-> `varName` の部分は front matter の `spec.var` 値（または Markdown ファイル名・拡張子なし）に置き換えてください。
+> `varName` の部分は front matter の `spec_var` 値（または Markdown ファイル名・拡張子なし）に置き換えてください。
 
 ## テンプレートの書き方
 
