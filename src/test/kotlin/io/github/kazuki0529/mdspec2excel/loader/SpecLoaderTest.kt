@@ -275,10 +275,10 @@ class SpecLoaderTest {
     @Nested
     inner class `front matter` {
         @Test
-        fun `var が指定されている場合はそれが varName になる`(@TempDir tempDir: Path) {
+        fun `spec_var が指定されている場合はそれが varName になる`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                var: loginSpec
+                spec_var: loginSpec
                 ---
                 # ログイン仕様書
             """.trimIndent()
@@ -288,7 +288,7 @@ class SpecLoaderTest {
         }
 
         @Test
-        fun `var が未指定のときはファイル名が varName になる`(@TempDir tempDir: Path) {
+        fun `spec_var が未指定のときはファイル名が varName になる`(@TempDir tempDir: Path) {
             val markdown = """
                 # タイトル
             """.trimIndent()
@@ -298,10 +298,10 @@ class SpecLoaderTest {
         }
 
         @Test
-        fun `var が空文字のときはファイル名が varName になる`(@TempDir tempDir: Path) {
+        fun `spec_var が空文字のときはファイル名が varName になる`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                var:
+                spec_var:
                 ---
                 # タイトル
             """.trimIndent()
@@ -314,7 +314,7 @@ class SpecLoaderTest {
         fun `front matter の title は見出し1として扱われない`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                var: mySpec
+                spec_var: mySpec
                 title: フロントマタータイトル
                 ---
                 # 見出し1タイトル
@@ -323,6 +323,50 @@ class SpecLoaderTest {
 
             assertEquals("mySpec", parsed.varName)
             assertEquals("見出し1タイトル", parsed.title)
+        }
+
+        @Test
+        fun `ユーザ定義変数がフラットキーとして取り込まれる`(@TempDir tempDir: Path) {
+            val markdown = """
+                ---
+                spec_var: mdSpec
+                feature: ログイン
+                viewpoint: 正常系
+                ---
+                # タイトル
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals("mdSpec", parsed.varName)
+            assertEquals(mapOf("feature" to "ログイン", "viewpoint" to "正常系"), parsed.vars)
+        }
+
+        @Test
+        fun `ユーザ定義変数がない場合は vars が空になる`(@TempDir tempDir: Path) {
+            val markdown = """
+                ---
+                spec_var: mdSpec
+                ---
+                # タイトル
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals(emptyMap<String, String>(), parsed.vars)
+        }
+
+        @Test
+        fun `spec_ プレフィックスのキーはユーザ定義変数に含まれない`(@TempDir tempDir: Path) {
+            val markdown = """
+                ---
+                spec_var: mdSpec
+                spec_future: reserved
+                feature: ログイン
+                ---
+                # タイトル
+            """.trimIndent()
+            val parsed = parseMarkdown(tempDir, markdown)
+
+            assertEquals(setOf("feature"), parsed.vars.keys)
         }
     }
 }
