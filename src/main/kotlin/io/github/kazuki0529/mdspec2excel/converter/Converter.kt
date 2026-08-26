@@ -17,7 +17,7 @@ private val logger = LoggerFactory.getLogger("Converter")
  *
  * ディレクトリ内の `.md` ファイルを列挙し、[parseSpec] でパースした結果を
  * JXls の [Context] に登録したうえでテンプレートを処理する。
- * 各ファイルの変数名には front matter の `spec.var` キーが優先され、未指定の場合はファイル名（拡張子なし）が使用される。
+ * 各ファイルの変数名には front matter の `spec_var` キーが優先され、未指定の場合はファイル名（拡張子なし）が使用される。
  *
  * @param mdSpecDir Markdown ファイルが格納されたディレクトリのパス
  * @param template JXls 形式の Excel テンプレートファイルのパス
