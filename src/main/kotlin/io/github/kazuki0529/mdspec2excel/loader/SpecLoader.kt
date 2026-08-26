@@ -144,10 +144,10 @@ private fun String.toNoteLines(): List<String> = lineSequence()
 private val validVarNamePattern = Regex("""^[A-Za-z_$][A-Za-z0-9_$]*$""")
 
 /** front matter における予約キー: JXls テンプレートの変数名を指定する */
-private const val FRONT_MATTER_KEY_VAR = "spec.var"
+private const val FRONT_MATTER_KEY_VAR = "spec_var"
 
-/** front matter における予約キーの一覧。ユーザ定義変数収集時に除外する */
-private val FRONT_MATTER_RESERVED_KEYS = setOf(FRONT_MATTER_KEY_VAR)
+/** front matter における予約キープレフィックス。このプレフィックスで始まるキーはユーザ定義変数から除外する */
+private const val FRONT_MATTER_RESERVED_PREFIX = "spec_"
 
 /**
  * TableBlock から customFields を抽出する。
@@ -215,12 +215,12 @@ fun parseSpec(file: File): Spec {
     frontMatterVisitor.visit(document)
     val frontMatterData = frontMatterVisitor.data
 
-    // 予約キー: spec.var → varName
+    // 予約キー: spec_var → varName
     val frontMatterVar = frontMatterData[FRONT_MATTER_KEY_VAR]?.firstOrNull()?.takeIf { it.isNotBlank() }
 
-    // 予約キー以外のすべてのキーをユーザ定義変数として収集する
+    // spec_ プレフィックスの予約キー以外をすべてユーザ定義変数として収集する
     val frontMatterVars: Map<String, String> = frontMatterData
-        .filterKeys { it !in FRONT_MATTER_RESERVED_KEYS }
+        .filterKeys { !it.startsWith(FRONT_MATTER_RESERVED_PREFIX) }
         .mapValues { (_, values) -> values.firstOrNull() ?: "" }
 
     var state = ParseState()

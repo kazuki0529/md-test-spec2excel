@@ -278,7 +278,7 @@ class SpecLoaderTest {
         fun `spec_var が指定されている場合はそれが varName になる`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                spec.var: loginSpec
+                spec_var: loginSpec
                 ---
                 # ログイン仕様書
             """.trimIndent()
@@ -301,7 +301,7 @@ class SpecLoaderTest {
         fun `spec_var が空文字のときはファイル名が varName になる`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                spec.var:
+                spec_var:
                 ---
                 # タイトル
             """.trimIndent()
@@ -314,7 +314,7 @@ class SpecLoaderTest {
         fun `front matter の title は見出し1として扱われない`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                spec.var: mySpec
+                spec_var: mySpec
                 title: フロントマタータイトル
                 ---
                 # 見出し1タイトル
@@ -329,7 +329,7 @@ class SpecLoaderTest {
         fun `ユーザ定義変数がフラットキーとして取り込まれる`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                spec.var: mdSpec
+                spec_var: mdSpec
                 feature: ログイン
                 viewpoint: 正常系
                 ---
@@ -345,7 +345,7 @@ class SpecLoaderTest {
         fun `ユーザ定義変数がない場合は vars が空になる`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                spec.var: mdSpec
+                spec_var: mdSpec
                 ---
                 # タイトル
             """.trimIndent()
@@ -355,10 +355,11 @@ class SpecLoaderTest {
         }
 
         @Test
-        fun `spec_var はユーザ定義変数に含まれない`(@TempDir tempDir: Path) {
+        fun `spec_ プレフィックスのキーはユーザ定義変数に含まれない`(@TempDir tempDir: Path) {
             val markdown = """
                 ---
-                spec.var: mdSpec
+                spec_var: mdSpec
+                spec_future: reserved
                 feature: ログイン
                 ---
                 # タイトル
@@ -367,22 +368,5 @@ class SpecLoaderTest {
 
             assertEquals(setOf("feature"), parsed.vars.keys)
         }
-    }
-}
-
-class SpecVarDiagTest {
-    @Test
-    fun `spec_var フラットキー診断`(@TempDir tempDir: java.nio.file.Path) {
-        val markdown = "---\nspec.var: loginSpec\nfeature: ログイン\n---\n# タイトル\n"
-        val file = tempDir.resolve("spec.md").toFile().apply { writeText(markdown) }
-        val options = com.vladsch.flexmark.util.data.MutableDataSet().set(
-            com.vladsch.flexmark.parser.Parser.EXTENSIONS,
-            listOf(com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension.create())
-        )
-        val doc = com.vladsch.flexmark.parser.Parser.builder(options).build().parse(file.readLines().joinToString("\n"))
-        val v = com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor()
-        v.visit(doc)
-        System.err.println("DATA = ${v.data}")
-        v.data.forEach { k, vals -> System.err.println("  key='$k' vals=$vals") }
     }
 }
