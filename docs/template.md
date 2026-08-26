@@ -46,8 +46,8 @@ front matter がない場合、`mdSpec.md` というファイルであれば `${
 ユーザ定義変数の参照例（`mdSpec.md` の場合）:
 
 ```
-${mdSpec.vars.feature}
-${mdSpec.vars.viewpoint}
+${mdSpec.vars['feature']}
+${mdSpec.vars['viewpoint']}
 ```
 
 `feature`、`viewpoint` はそれぞれ front matter で定義した値が展開されます。
