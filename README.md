@@ -36,8 +36,11 @@ docker run --rm \
 | [使い方](docs/usage.md) | 実行方法（Fat Jar / Docker）・引数の説明 |
 | [Markdown ファイルの仕様](docs/markdown-spec.md) | 記述ルール・入出力の例 |
 | [テンプレートのカスタマイズ](docs/template.md) | JXls テンプレートの書き方・使用できる変数一覧 |
-| [Qiita 続編向けガイド](docs/qiita-sequel.md) | 実運用フロー・比較・導入メリット・前回記事との差分 |
 | [コントリビューション](CONTRIBUTING.md) | 開発環境・ビルド・テスト・プロジェクト構成 |
+
+## 記事執筆向け資料
+
+- [Qiita 続編向けガイド](docs/qiita-sequel.md): 実運用フロー・比較・導入メリット・前回記事との差分の整理
 
 ## ライセンス
 
