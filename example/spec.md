@@ -1,5 +1,5 @@
 ---
-var: mdSpec
+spec_var: mdSpec
 ---
 
 # テストケース名
